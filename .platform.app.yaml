@@ -1,0 +1,40 @@
+name: node
+type: nodejs:6.10
+
+dependencies:
+  nodejs:
+    pm2: "^2.6.0"
+
+web:
+  commands:
+    start: 'PM2_HOME=$PLATFORM_APP_DIR/run NODE_ENV=production pm2 start web/index.js --name "Ghost"'
+
+  locations:
+    "/web":
+      root: 'web'
+      passthru: false
+      # Whether to allow files not matching a rule or not.
+      allow: true
+
+mounts:
+  "/run": "shared:files/run"
+  "/ghost_content": "shared:files/content"
+
+
+hooks:
+  build: |
+    set -ex
+    wget -O ghost.zip 'https://github.com/TryGhost/Ghost/releases/download/0.11.11/Ghost-0.11.11.zip'
+    unzip -uo ghost.zip -d web
+    cd web/
+    npm install --production
+    ln -sf $PLATFORM_APP_DIR/config.js config.js
+
+  deploy: |
+    cd $PLATFORM_APP_DIR/ghost_content
+    mkdir -p images
+    mkdir -p apps
+    mkdir -p data
+    mkdir -p themes
+
+disk: 1024
